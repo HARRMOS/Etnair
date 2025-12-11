@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id           Int            @id @default(autoincrement())
+  login        String         @unique
+  password     String
+  lastname     String
+  firstname    String
+  birthdate    DateTime?
+  email        String         @unique
+  phone        String?
+  userpictures String?
+  annonces     Annonces[]
+  reservations Reservations[]
+  company      Company[]
+  isadmin Boolean @default(false)
+}
+
+model Company {
+  id           Int    @id @default(autoincrement())
+  CompanyName  String
+  SiretNumber  String @unique
+  CompanyPhone String
+  CompanyEmail String @unique
+  LeaderName   String
+  userId       Int
+  user         Users  @relation(fields: [userId], references: [id])
+}
+
+model Annonces {
+  id           Int            @id @default(autoincrement())
+  Title        String
+  Description  String
+  Price        Decimal
+  Covers       String
+  Tags         String[]
+  Equipments   String[]
+  Locations    String
+  userId       Int
+  categoryId   Int
+  user         Users          @relation(fields: [userId], references: [id])
+  category     Category       @relation(fields: [categoryId], references: [id])
+  reservations Reservations[]
+}
+
+model Reservations {
+  id            Int      @id @default(autoincrement())
+  arrivalDate   DateTime
+  departureDate DateTime
+  GuestNb       Int
+  TotalCost     Decimal
+  Status        String
+
+  annoncesId Int
+  anonces    Annonces @relation(fields: [annoncesId], references: [id])
+  UserId     Int
+  user       Users    @relation(fields: [UserId], references: [id])
+  review     Review?
+}
+
+model Category {
+  id                  Int        @id @default(autoincrement())
+  name                String     @unique
+  descriptionCategory String
+  CategoryPictures    String
+  annonces            Annonces[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  Rating    Int
+  Comment   String
+  CreatedAt DateTime
+
+  reservationId Int          @unique
+  reservation   Reservations @relation(fields: [reservationId], references: [id])
+}
