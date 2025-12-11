@@ -1,0 +1,19 @@
+{
+  "name": "etnair",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "postinstall": "prisma generate",
+    "dev": "node src/server.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.0"
+  }
+}
