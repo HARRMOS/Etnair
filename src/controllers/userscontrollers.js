@@ -91,12 +91,17 @@ export const createUser = async (req, res) => {
   }
 };
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { login: loginInput, password } = req.body;
 
   try {
     // 1) Vérifier que l'utilisateur existe
-    const user = await prisma.users.findUnique({
-      where: { login },
+    const user = await prisma.users.findFirst({
+      where: {
+        OR: [
+          { login: loginInput },
+          { email: loginInput }
+        ]
+      }
     });
 
     if (!user) {
