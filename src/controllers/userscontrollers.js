@@ -96,11 +96,11 @@ export const login = async (req, res) => {
   try {
     // 1) Vérifier que l'utilisateur existe
     const user = await prisma.users.findUnique({
-      where: { email },
+      where: { login },
     });
 
     if (!user) {
-      return res.status(404).json({ error: "Email incorrect" });
+      return res.status(404).json({ error: "Login incorrect" });
     }
 
     // 2) Vérifier le mot de passe
