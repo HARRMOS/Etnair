@@ -7,7 +7,14 @@ import companyRoutes from "./routes/company.route.js";
 
 const app = express();
 
-app.use(express.json());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // ou "*" pour autoriser tous les domaines
+    credentials: true, // si tu utilises cookies
+  })
+);
+app.use(express.json()); // ← très important !
+
 
 // Routes
 app.use("/users", usersRoutes);
