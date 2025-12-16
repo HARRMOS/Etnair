@@ -4,6 +4,8 @@ import usersRoutes from "./routes/users.routes.js";
 import annoncesRoutes from "./routes/annonces.route.js";
 import categoryRoutes from "./routes/category.routes.js";
 import companyRoutes from "./routes/company.route.js";
+import cors from "cors";
+
 
 const app = express();
 
