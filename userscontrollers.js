@@ -4,31 +4,8 @@ import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
 
 // GET /users
-export const getMyUser = async (req, res) => {
-  try {
-    const user = await prisma.users.findUnique({
-      where: {
-        id: req.user.id,
-      },
-      include: {
-        annonces: true,
-        reservations: true,
-      },
-    });
-    if (!user) {
-      return res.status(404).json({ error: "Utilisateur introuvable" });
-    } else {
-      res.json(user);
-    }
-  } catch (error) {
-    console.error("Erreur getUserById:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-};
-
 export const getUserById = async (req, res) => {
   const { id } = req.params;
-
   try {
     const user = await prisma.users.findUnique({
       where: {
@@ -135,9 +112,11 @@ export const login = async (req, res) => {
     }
 
     // 3) Générer un token JWT
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES || "1h",
-    });
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES }
+    );
 
     const userId = user.id;
 
@@ -193,5 +172,4 @@ export default {
   getUsers,
   deleteUser,
   modifyUser,
-  getMyUser,
 };

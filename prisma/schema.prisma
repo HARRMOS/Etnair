@@ -22,7 +22,7 @@ model Users {
   birthdate    DateTime?
   email        String         @unique
   phone        String?
-  userpictures String?
+  userpictures String?         @default("https://static.vecteezy.com/system/resources/thumbnails/035/857/779/small/people-face-avatar-icon-cartoon-character-png.png")
   annonces     Annonces[]
   reservations Reservations[]
   company      Company[]
@@ -45,11 +45,15 @@ model Annonces {
   Title        String
   Description  String
   Price        Decimal
-  Covers       String
+  Covers       String[]
   Tags         String[]
   Equipments   String[]
   Locations    String
-  userId       Int
+  Statut       String         @default("En cours")
+  firstDate    DateTime
+  dates        DateTime[] 
+  nbGuest      Int            
+  userId       Int            
   categoryId   Int
   user         Users          @relation(fields: [userId], references: [id])
   category     Category       @relation(fields: [categoryId], references: [id])
