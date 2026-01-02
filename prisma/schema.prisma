@@ -52,7 +52,8 @@ model Annonces {
   Statut       String         @default("En cours")
   firstDate    DateTime
   dates        DateTime[] 
-  nbGuest      Int            
+  nbGuest      Int          
+  Motif        String         @default("Auncun")  
   userId       Int            
   categoryId   Int
   user         Users          @relation(fields: [userId], references: [id])
@@ -61,17 +62,16 @@ model Annonces {
 }
 
 model Reservations {
-  id            Int      @id @default(autoincrement())
-  arrivalDate   DateTime
-  departureDate DateTime
-  GuestNb       Int
-  TotalCost     Decimal
-  Status        String
+  id                       Int      @id @default(autoincrement())
+  ReservationDates         DateTime[] 
+  GuestNb                  Int
+  TotalCost                Decimal
+  Status                   String
 
-  annoncesId Int
-  anonces    Annonces @relation(fields: [annoncesId], references: [id])
-  UserId     Int
-  user       Users    @relation(fields: [UserId], references: [id])
+  annoncesId               Int
+  anonces    Annonces      @relation(fields: [annoncesId], references: [id])
+  UserId                   Int
+  user       Users         @relation(fields: [UserId], references: [id])
   review     Review?
 }
 

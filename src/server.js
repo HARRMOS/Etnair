@@ -4,6 +4,7 @@ import usersRoutes from "./routes/users.routes.js";
 import annoncesRoutes from "./routes/annonces.route.js";
 import categoryRoutes from "./routes/category.routes.js";
 import companyRoutes from "./routes/company.route.js";
+import reservationRoutes from "./routes/reservation.route.js";
 
 const app = express();
 app.use(express.json());
@@ -19,6 +20,7 @@ app.use(
 // Routes
 app.use("/users", usersRoutes);
 app.use("/annonces", annoncesRoutes);
+app.use("/reservation", reservationRoutes);
 
 app.use("/category", categoryRoutes);
 app.use("/company", companyRoutes);

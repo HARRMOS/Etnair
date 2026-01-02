@@ -1,101 +1,79 @@
-/* --- CREATE --- */
-export const createReservation = async (req, res) => {
-  const { arrivalDate, departureDate, GuestNb, TotalCost, Status, annoncesId } =
-    req.body;
+import { PrismaClient } from "@prisma/client";
+import multer from "multer";
+import dotenv from "dotenv";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+dotenv.config();
 
-  // Utiliser l'ID de l'utilisateur connecté
-  const UserId = req.user?.id || req.userId;
-  // Validation des champs requis
-  if (
-    !arrivalDate ||
-    !departureDate ||
-    !GuestNb ||
-    !TotalCost ||
-    !Status ||
-    !annoncesId
-  ) {
-    return res.status(400).json({
-      error:
-        "Champs manquants : arrivalDate, departureDate, GuestNb, TotalCost, Status et annoncesId sont requis",
-    });
-  }
-  if (!UserId) {
-    return res.status(401).json({ error: "Utilisateur non authentifié" });
-  }
-  // Validation des dates
-  const arrival = new Date(arrivalDate);
-  const departure = new Date(departureDate);
-  if (isNaN(arrival.getTime()) || isNaN(departure.getTime())) {
-    return res.status(400).json({ error: "Format de date invalide" });
-  }
-  if (arrival >= departure) {
-    return res
-      .status(400)
-      .json({
-        error: "La date d'arrivée doit être antérieure à la date de départ",
-      });
-  }
-  if (arrival < new Date()) {
-    return res
-      .status(400)
-      .json({ error: "La date d'arrivée ne peut pas être dans le passé" });
-  }
-  // Validation du nombre de guests
-  if (GuestNb < 1) {
-    return res
-      .status(400)
-      .json({ error: "Le nombre d'invités doit être au moins 1" });
-  }
-  // Validation du coût total
-  if (TotalCost <= 0) {
-    return res
-      .status(400)
-      .json({ error: "Le coût total doit être supérieur à 0" });
-  }
+const prisma = new PrismaClient();
+/* --- CREATE RESERVATION --- */
+export const createReservation = async (req, res) => {
   try {
-    // Vérifier que l'annonce existe
+    const { GuestNb, annoncesId, dates } = req.body;
+    const userId = req.user?.id;
+
+    if (
+      !GuestNb ||
+      !annoncesId ||
+      !Array.isArray(dates) ||
+      dates.length === 0
+    ) {
+      return res.status(400).json({ error: "Données invalides ou manquantes" });
+    }
+    if (!userId) {
+      return res.status(401).json({ error: "Utilisateur non authentifié" });
+    }
+
+    // --- Récup de l'annonce ---
     const annonce = await prisma.annonces.findUnique({
       where: { id: Number(annoncesId) },
     });
+
     if (!annonce) {
       return res.status(404).json({ error: "Annonce introuvable" });
     }
-    // Vérifier que l'utilisateur existe
-    const user = await prisma.users.findUnique({
-      where: { id: Number(UserId) },
-    });
-    if (!user) {
-      return res.status(404).json({ error: "Utilisateur introuvable" });
-    }
-    const newReservation = await prisma.reservations.create({
-      data: {
-        arrivalDate: arrival,
-        departureDate: departure,
-        GuestNb: Number(GuestNb),
 
-        TotalCost: Number(TotalCost),
-        Status,
-        annoncesId: Number(annoncesId),
-        UserId: Number(UserId),
-      },
-      include: {
-        anonces: {
-          include: {
-            user: true,
-            category: true,
-          },
+    // --- code chat a verifier probleme avec la syntaxe des dates ---
+    const normalizeDate = (date) =>
+      new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
+    const reservedDates = dates.map((d) => normalizeDate(new Date(d)));
+    const availableDates = annonce.dates.map((d) => normalizeDate(new Date(d)));
+
+    // --- verification de disponibilite des dates ---
+    const allAvailable = reservedDates.every((d) => availableDates.includes(d));
+    if (!allAvailable) {
+      return res
+        .status(400)
+        .json({ error: "Certaines dates ne sont plus disponibles" });
+    }
+
+    const remainingDates = annonce.dates.filter(
+      (d) => !reservedDates.includes(normalizeDate(new Date(d)))
+    );
+    const totalCost = annonce.Price * dates.length;
+
+    const [reservation] = await prisma.$transaction([
+      prisma.annonces.update({
+        where: { id: annonce.id },
+        data: { dates: remainingDates },
+      }),
+      prisma.reservations.create({
+        data: {
+          ReservationDates: dates.map((d) => new Date(d)),
+          GuestNb: Number(GuestNb),
+          TotalCost: totalCost,
+          Status: "En cours",
+          annoncesId: annonce.id,
+          UserId: userId,
         },
-        user: true,
-        review: true,
-      },
-    });
-    res.status(201).json(newReservation);
+      }),
+    ]);
+
+    // ---  Réponse ---
+    res.status(201).json(reservation);
   } catch (error) {
     console.error("Erreur createReservation:", error);
-    if (error.code === "P2003") {
-      return res.status(400).json({ error: "annoncesId ou UserId invalide" });
-    }
-    res.status(500).json({ error: "Erreur serveur lors de la création" });
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 /* --- GET ALL --- */
@@ -118,9 +96,7 @@ export const getAllReservations = async (req, res) => {
         user: true,
         review: true,
       },
-      orderBy: {
-        arrivalDate: "desc",
-      },
+     
     });
     res.status(200).json(reservations);
   } catch (error) {
